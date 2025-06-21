@@ -71,9 +71,9 @@ const Index = () => {
 
   const plans = [
     {
-      name: "Starter",
-      price: "29€",
-      period: "/mois",
+      name: "Basic",
+      price: "300",
+      period: "Robux/mois",
       description: "Parfait pour les petits serveurs",
       features: [
         "Jusqu'à 100 joueurs",
@@ -85,8 +85,8 @@ const Index = () => {
     },
     {
       name: "Pro",
-      price: "79€",
-      period: "/mois",
+      price: "600",
+      period: "Robux/mois",
       description: "Idéal pour les serveurs moyens",
       features: [
         "Jusqu'à 500 joueurs",
@@ -100,8 +100,8 @@ const Index = () => {
     },
     {
       name: "Enterprise",
-      price: "199€",
-      period: "/mois",
+      price: "1200",
+      period: "Robux/mois",
       description: "Pour les gros serveurs et réseaux",
       features: [
         "Joueurs illimités",
