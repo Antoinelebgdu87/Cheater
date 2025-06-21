@@ -8,6 +8,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Shield,
   Zap,
   Eye,
@@ -18,9 +28,84 @@ import {
   BarChart3,
   Target,
   Clock,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 
 const Index = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [formData, setFormData] = useState({
+    discord: "",
+    customOptions: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePlanSelect = (planName: string) => {
+    setSelectedPlan(planName);
+    setIsFormOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const webhookData = {
+        embeds: [
+          {
+            title: "🎮 Nouvelle Commande RoTech FR",
+            color: 8852224, // Purple color
+            fields: [
+              {
+                name: "📦 Plan Sélectionné",
+                value: selectedPlan,
+                inline: true,
+              },
+              {
+                name: "👤 Discord",
+                value: formData.discord,
+                inline: true,
+              },
+              {
+                name: "⚙️ Options Personnalisées",
+                value: formData.customOptions || "Aucune",
+                inline: false,
+              },
+            ],
+            timestamp: new Date().toISOString(),
+            footer: {
+              text: "RoTech FR - Anticheat System",
+            },
+          },
+        ],
+      };
+
+      await fetch(
+        "https://discordapp.com/api/webhooks/1385305354157559921/o7AT-cgK96FrlabZ8ty6rXQAt92TuAup7JRmoWwxEs-GZeGyQ4iK58E53_oVITcuEd1T",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(webhookData),
+        },
+      );
+
+      // Reset form and close modal
+      setFormData({ discord: "", customOptions: "" });
+      setIsFormOpen(false);
+      alert(
+        "Commande envoyée avec succès! Nous vous contactons bientôt sur Discord.",
+      );
+    } catch (error) {
+      console.error("Erreur lors de l'envoi:", error);
+      alert("Erreur lors de l'envoi. Veuillez réessayer.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const stats = [
     { label: "Détections par jour", value: "50K+", icon: Shield },
     { label: "Serveurs protégés", value: "1,200+", icon: Eye },
@@ -327,6 +412,7 @@ const Index = () => {
                   <Button
                     className={`w-full ${plan.popular ? "bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90" : ""}`}
                     variant={plan.popular ? "default" : "outline"}
+                    onClick={() => handlePlanSelect(plan.name)}
                   >
                     Choisir ce Plan
                   </Button>
@@ -479,6 +565,93 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Order Form Modal */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-tech-purple to-tech-cyan bg-clip-text text-transparent">
+              Commander {selectedPlan}
+            </DialogTitle>
+            <DialogDescription>
+              Remplissez vos informations pour finaliser votre commande
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="discord" className="text-sm font-medium">
+                Nom d'utilisateur Discord *
+              </Label>
+              <Input
+                id="discord"
+                type="text"
+                placeholder="exemple#1234"
+                value={formData.discord}
+                onChange={(e) =>
+                  setFormData({ ...formData, discord: e.target.value })
+                }
+                required
+                className="bg-secondary/50 border-border"
+              />
+              <p className="text-xs text-muted-foreground">
+                Nous vous contacterons sur Discord pour finaliser la commande
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customOptions" className="text-sm font-medium">
+                Options personnalisées (optionnel)
+              </Label>
+              <Textarea
+                id="customOptions"
+                placeholder="Décrivez vos besoins spécifiques ou options supplémentaires..."
+                value={formData.customOptions}
+                onChange={(e) =>
+                  setFormData({ ...formData, customOptions: e.target.value })
+                }
+                className="bg-secondary/50 border-border min-h-[100px]"
+              />
+            </div>
+
+            <div className="bg-secondary/30 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">
+                Récapitulatif de la commande:
+              </h4>
+              <div className="flex justify-between items-center">
+                <span>Plan {selectedPlan}</span>
+                <span className="font-bold text-tech-purple">
+                  {selectedPlan === "Basic"
+                    ? "300"
+                    : selectedPlan === "Pro"
+                      ? "600"
+                      : "1200"}{" "}
+                  Robux/mois
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsFormOpen(false)}
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Envoi..." : "Confirmer la Commande"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
