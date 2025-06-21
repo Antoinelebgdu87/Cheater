@@ -52,6 +52,7 @@ const Index = () => {
   ]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const [chatDisabled, setChatDisabled] = useState(false);
 
   const handlePlanSelect = (planName: string) => {
     setSelectedPlan(planName);
@@ -94,21 +95,21 @@ const Index = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur API OpenRouter:", errorData);
-
         if (response.status === 402) {
+          setChatDisabled(true);
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
               content:
-                "Désolé, le service de chat est temporairement indisponible. Vous pouvez nous contacter directement sur Discord pour toute question.",
+                "💬 Le chat AI est temporairement indisponible. Pour toute question, vous pouvez :\n\n• 📧 Nous contacter par email\n• 💬 Rejoindre notre Discord\n• 📋 Utiliser le formulaire de commande pour des questions spécifiques\n\nNous reviendrons bientôt !",
             },
           ]);
           return;
         }
 
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Erreur API OpenRouter:", errorData);
         throw new Error(`API Error: ${response.status}`);
       }
 
@@ -783,23 +784,38 @@ const Index = () => {
 
           {/* Message Input */}
           <div className="border-t border-border pt-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Tapez votre message..."
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                className="flex-1 bg-secondary/50 border-border"
-                disabled={isAiTyping}
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={!currentMessage.trim() || isAiTyping}
-                className="bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90"
-              >
-                Envoyer
-              </Button>
-            </div>
+            {chatDisabled ? (
+              <div className="text-center py-4 bg-secondary/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">
+                  💬 Chat temporairement indisponible
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsChatOpen(false)}
+                >
+                  Fermer
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Tapez votre message..."
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                  className="flex-1 bg-secondary/50 border-border"
+                  disabled={isAiTyping}
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!currentMessage.trim() || isAiTyping}
+                  className="bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90"
+                >
+                  Envoyer
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
