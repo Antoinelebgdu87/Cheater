@@ -19,6 +19,13 @@ export default {
     },
     extend: {
       colors: {
+        tech: {
+          purple: "hsl(263 70% 60%)",
+          cyan: "hsl(180 100% 60%)",
+          blue: "hsl(217 91% 60%)",
+          dark: "hsl(240 10% 3.9%)",
+          darker: "hsl(240 5% 2%)",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
