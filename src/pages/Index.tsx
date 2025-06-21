@@ -40,10 +40,81 @@ const Index = () => {
     customOptions: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([
+    {
+      role: "assistant",
+      content:
+        "Bonjour! Je suis l'assistant RoTech FR. Comment puis-je vous aider avec notre système anticheat?",
+    },
+  ]);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [isAiTyping, setIsAiTyping] = useState(false);
 
   const handlePlanSelect = (planName: string) => {
     setSelectedPlan(planName);
     setIsFormOpen(true);
+  };
+
+  const sendMessage = async () => {
+    if (!currentMessage.trim()) return;
+
+    const userMessage = currentMessage;
+    setCurrentMessage("");
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setIsAiTyping(true);
+
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              "Bearer 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",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "anthropic/claude-3.5-haiku",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Tu es un expert en sécurité anticheat pour RoTech FR. Tu aides les clients à comprendre nos services anticheat pour Roblox. Réponds en français, sois professionnel mais accessible. Tu peux expliquer nos fonctionnalités: détection IA avancée, protection 24/7, 99.8% de précision, support pour serveurs Roblox. Nos plans: Basic (300 Robux/mois), Pro (600 Robux/mois), Enterprise (1200 Robux/mois).",
+              },
+              ...messages,
+              { role: "user", content: userMessage },
+            ],
+            temperature: 0.7,
+            max_tokens: 500,
+          }),
+        },
+      );
+
+      const data = await response.json();
+      const aiResponse =
+        data.choices[0]?.message?.content ||
+        "Désolé, je rencontre un problème technique. Pouvez-vous reformuler votre question?";
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: aiResponse },
+      ]);
+    } catch (error) {
+      console.error("Erreur chat AI:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Désolé, je rencontre un problème de connexion. Pouvez-vous réessayer?",
+        },
+      ]);
+    } finally {
+      setIsAiTyping(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,15 +304,6 @@ const Index = () => {
             >
               Statistiques
             </a>
-            <Button variant="outline" size="sm">
-              Connexion
-            </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90"
-            >
-              Commencer
-            </Button>
           </div>
         </div>
       </nav>
@@ -437,12 +499,9 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90 px-8"
+                variant="outline"
+                onClick={() => setIsChatOpen(true)}
               >
-                <Shield className="w-5 h-5 mr-2" />
-                Commencer Maintenant
-              </Button>
-              <Button size="lg" variant="outline">
                 Parler à un Expert
               </Button>
             </div>
@@ -650,6 +709,79 @@ const Index = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Chat Modal */}
+      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
+        <DialogContent className="sm:max-w-[600px] h-[700px] bg-card border-border flex flex-col">
+          <DialogHeader className="border-b border-border pb-4">
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-tech-purple to-tech-cyan bg-clip-text text-transparent">
+              💬 Chat avec un Expert RoTech
+            </DialogTitle>
+            <DialogDescription>
+              Posez toutes vos questions sur notre système anticheat
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] p-3 rounded-lg ${
+                    message.role === "user"
+                      ? "bg-gradient-to-r from-tech-purple to-tech-cyan text-white"
+                      : "bg-secondary text-foreground"
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                </div>
+              </div>
+            ))}
+
+            {isAiTyping && (
+              <div className="flex justify-start">
+                <div className="bg-secondary p-3 rounded-lg">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-tech-purple rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-tech-cyan rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-tech-blue rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Message Input */}
+          <div className="border-t border-border pt-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Tapez votre message..."
+                value={currentMessage}
+                onChange={(e) => setCurrentMessage(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                className="flex-1 bg-secondary/50 border-border"
+                disabled={isAiTyping}
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={!currentMessage.trim() || isAiTyping}
+                className="bg-gradient-to-r from-tech-purple to-tech-cyan hover:opacity-90"
+              >
+                Envoyer
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
