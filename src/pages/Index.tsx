@@ -88,14 +88,33 @@ const Index = () => {
               { role: "user", content: userMessage },
             ],
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: 250,
           }),
         },
       );
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erreur API OpenRouter:", errorData);
+
+        if (response.status === 402) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content:
+                "Désolé, le service de chat est temporairement indisponible. Vous pouvez nous contacter directement sur Discord pour toute question.",
+            },
+          ]);
+          return;
+        }
+
+        throw new Error(`API Error: ${response.status}`);
+      }
+
       const data = await response.json();
       const aiResponse =
-        data.choices[0]?.message?.content ||
+        data.choices?.[0]?.message?.content ||
         "Désolé, je rencontre un problème technique. Pouvez-vous reformuler votre question?";
 
       setMessages((prev) => [
@@ -109,7 +128,7 @@ const Index = () => {
         {
           role: "assistant",
           content:
-            "Désolé, je rencontre un problème de connexion. Pouvez-vous réessayer?",
+            "Désolé, je rencontre un problème de connexion. Pouvez-vous réessayer ou nous contacter sur Discord?",
         },
       ]);
     } finally {
